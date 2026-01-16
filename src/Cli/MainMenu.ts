@@ -2,7 +2,7 @@ import inquirer from "inquirer";
 import { showMemberMenu } from "./memberMenu";
 import { showMembershipPlans } from "./membershipplansMenu";
 import { showSubscriptionMenu } from "./subscriptionMenu";
-import { ExportService } from "../Services/export_Service";
+import { ExportService } from "../Services/exportService";
 import { waitForEnter } from "../Services/Helper";
 
 export async function showMainMenu(firstLoad = true): Promise<void> {

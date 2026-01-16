@@ -1,5 +1,5 @@
 import inquirer from "inquirer";
-import { MemberSubscriptionService } from "../Services/memberSubscription_service";
+import { MemberSubscriptionService } from "../Services/memberSubscriptionService";
 
 export async function showSubscriptionMenu(): Promise<void> {
   console.clear();

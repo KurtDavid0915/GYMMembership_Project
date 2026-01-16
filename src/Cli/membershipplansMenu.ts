@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
-import { MembershipPlanService } from "../Services/membershipplans_service";
-import { waitForEnter } from "../Services/Helper";
+import { MembershipPlanService } from "../Services/membershipplansService";
+import { waitForEnter } from "../Services/helper";
 
 export async function showMembershipPlans() : Promise <void> {
     console.clear();
