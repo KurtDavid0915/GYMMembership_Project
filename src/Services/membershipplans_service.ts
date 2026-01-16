@@ -1,16 +1,18 @@
-import { db } from "../Database/database";
 import inquirer from "inquirer";
+import { dbGet, dbAll, dbRun } from "../Database/database";
 import { membership_plans } from "../Models/membership_plans";
+import { waitForEnter } from "./Helper";
 
 export class MembershipPlanService {
+  
   static async addMembershipPlanPrompt(): Promise<void> {
     console.log("\nCurrent Plans:");
     await this.viewMembershipPlans();
     
     const answers = await inquirer.prompt([
-      { type: "input", name: "name", message: "Plan Name:" },
-      { type: "input", name: "duration_days", message: "Duration (days):" },
-      { type: "input", name: "price", message: "Price:" },
+      { type: "input", name: "name", message: "Plan Name:", validate: (v) => v.trim() !== "" || "Plan name is required" },
+      { type: "input", name: "duration_days", message: "Duration (days):", validate: (v) => !isNaN(Number(v)) || "Enter a valid number" },
+      { type: "input", name: "price", message: "Price:", validate: (v) => !isNaN(Number(v)) || "Enter a valid price" },
     ]);
 
     const newPlan: Omit<membership_plans, "id"> = {
@@ -19,73 +21,40 @@ export class MembershipPlanService {
       price: parseFloat(answers.price),
     };
 
-    db.run(
+    const res = await dbRun(
       `INSERT INTO membershipPlans_tb (name, duration_days, price) VALUES (?, ?, ?)`,
-      [newPlan.plan_name, newPlan.duration_days, newPlan.price],
-      function (err) {
-        if (err)
-          console.error("❌ Failed to add membership plan:", err.message);
-        else
-          console.log(
-            `✅ Membership plan added! ID: ${this.lastID.toString()}`
-          );
-      }
+      [newPlan.plan_name, newPlan.duration_days, newPlan.price]
     );
+    if (res && res.lastID) console.log(`✅ Membership plan added! ID: ${res.lastID}`);
   }
+
   static async viewMembershipPlans(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      db.all(
-        `SELECT 
+    const rows: membership_plans[] = await dbAll<membership_plans>(
+      `SELECT 
         membership_ID AS id,
         name AS plan_name,
         duration_days,
         price
-       FROM membershipPlans_tb`,
-        [],
-        async (err, rows: any[]) => {
-          if (err) {
-            console.error("❌ DB Error:", err);
-            reject(err);
-            return;
-          }
+       FROM membershipPlans_tb`
+    );
 
-          if (!rows || rows.length === 0) {
-            console.log("⚠️ No membership plans found.");
-            await inquirer.prompt([
-              {
-                type: "input",
-                name: "pause",
-                message: "Press Enter to continue...",
-              },
-            ]);
-            resolve();
-            return;
-          }
+    if (!rows || rows.length === 0) {
+      console.log("⚠️ No membership plans found.");
+      await waitForEnter();
+      return;
+    }
 
-          console.log("\n--- Membership Plans ---");
-
-          rows.forEach((p) => {
-            const price = Number(p.price) || 0;
-            console.log(
-              `ID: ${p.id} | Plan Name: ${p.plan_name} | Duration: ${
-                p.duration_days
-              } days | Price: ₱${price.toFixed(2)}`
-            );
-          });
-
-          await inquirer.prompt([
-            {
-              type: "input",
-              name: "pause",
-              message: "Press Enter to continue...",
-            },
-          ]);
-
-          resolve();
-        }
+    console.log("\n--- Membership Plans ---");
+    rows.forEach((p) => {
+      const price = Number(p.price) || 0;
+      console.log(
+        `ID: ${p.id} | Plan Name: ${p.plan_name} | Duration: ${p.duration_days} days | Price: ₱${price.toFixed(2)}`
       );
     });
+
+    await waitForEnter();
   }
+
   static async updateMembershipPlan(): Promise<void> {
     console.log("\nCurrent Plans:");
     await this.viewMembershipPlans();
@@ -106,16 +75,7 @@ export class MembershipPlanService {
       return;
     }
 
-    const plan = await new Promise<membership_plans | null>(
-      (resolve, reject) => {
-        db.get(
-          `SELECT * FROM membershipPlans_tb WHERE membership_ID = ?`,
-          [id],
-          (err, row) =>
-            err ? reject(err) : resolve(row ? (row as membership_plans) : null)
-        );
-      }
-    );
+    const plan = (await dbGet(`SELECT * FROM membershipPlans_tb WHERE membership_ID = ?`, [id])) as membership_plans | null;
 
     if (!plan) {
       console.log("❌ Membership plan not found.");
@@ -153,23 +113,16 @@ export class MembershipPlanService {
       return;
     }
 
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `UPDATE membershipPlans_tb
+    await dbRun(
+      `UPDATE membershipPlans_tb
        SET name = ?, duration_days = ?, price = ?
        WHERE membership_ID = ?`,
-        [
-          updates.plan_name,
-          Number(updates.duration_days),
-          Number(updates.price),
-          id,
-        ],
-        (err) => (err ? reject(err) : resolve())
-      );
-    });
+      [updates.plan_name, Number(updates.duration_days), Number(updates.price), id]
+    );
 
     console.log("✅ Membership plan successfully updated.");
   }
+  
   static async deleteMembershipPlan(): Promise<void> {
     console.log("\nCurrent Plans:");
     await this.viewMembershipPlans();
@@ -188,29 +141,14 @@ export class MembershipPlanService {
       console.log("❌ Deletion cancelled.");
       return;
     }
-    const plan = await new Promise<membership_plans | null>(
-      (resolve, reject) => {
-        db.get(
-          `SELECT * FROM membershipPlans_tb WHERE membership_ID = ?`,
-          [id],
-          (err, row) =>
-            err ? reject(err) : resolve(row ? (row as membership_plans) : null)
-        );
-      }
-    );
+    const plan = (await dbGet(`SELECT * FROM membershipPlans_tb WHERE membership_ID = ?`, [id])) as membership_plans | null;
 
     if (!plan) {
       console.log("❌ Membership plan not found.");
       return;
     }
 
-    await new Promise<void>((resolve, reject) => {
-      db.run(
-        `DELETE FROM membershipPlans_tb WHERE membership_ID = ?`,
-        [id],
-        (err) => (err ? reject(err) : resolve())
-      );
-    });
+    await dbRun(`DELETE FROM membershipPlans_tb WHERE membership_ID = ?`, [id]);
 
     console.log("✅ Membership plan successfully deleted.");
   }
