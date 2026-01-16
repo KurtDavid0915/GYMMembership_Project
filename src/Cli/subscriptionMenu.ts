@@ -11,16 +11,17 @@ export async function showSubscriptionMenu(): Promise<void> {
         "Delete Subscription",
         "Back to Main Menu"
     ];
-    choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));   
+    choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));
 
     const { menuChoice } = await inquirer.prompt([
         {
             type: "input",
             name: "menuChoice",
             message: "Enter number or option name:",
-            validate: (v) => v.trim() !== "" || "Required"
+            validate: (v) => v.trim() !== "" || "Required",
         }
     ]);
+
     let selected = "";
     const num = parseInt(menuChoice);
     if (!isNaN(num) && num >= 1 && num <= choices.length) {
@@ -32,6 +33,7 @@ export async function showSubscriptionMenu(): Promise<void> {
             c => c.toLowerCase() === menuChoice.toLowerCase()
         ) || "";
     }
+
     switch (selected) {
         case "Add Subscription":
             await MemberSubscriptionService.addMemberSubscriptionPrompt();

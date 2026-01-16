@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
 import { MembershipPlanService } from "../Services/membershipplans_service";
+import { waitForEnter } from "../Services/Helper";
 
 export async function showMembershipPlans() : Promise <void> {
     console.clear();
@@ -13,14 +14,14 @@ export async function showMembershipPlans() : Promise <void> {
         "Back to Main Menu"
     ];
 
-    choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));   
+    choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));
 
     const { menuChoice } = await inquirer.prompt([
         {
             type: "input",
             name: "menuChoice",
             message: "Enter number or option name:",
-            validate: (v) => v.trim() !== "" || "Required"
+            validate: (v) => v.trim() !== "" || "Required",
         }
     ]);
 
@@ -34,6 +35,7 @@ export async function showMembershipPlans() : Promise <void> {
             c => c.toLowerCase() === menuChoice.toLowerCase()
         ) || "";
     }
+
     switch (selected) {
         case "Add Membership Plan":
             await MembershipPlanService.addMembershipPlanPrompt();

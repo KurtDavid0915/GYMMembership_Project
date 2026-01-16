@@ -8,6 +8,7 @@ export async function showMemberMenu(): Promise<void> {
   const choices = [
     "Add Member",
     "View Members",
+    "Search Members",
     "Update Member",
     "Delete Member",
     "Back to Main Menu"
@@ -20,8 +21,8 @@ export async function showMemberMenu(): Promise<void> {
       type: "input",
       name: "menuChoice",
       message: "Enter number or option name:",
-      validate: (v) => v.trim() !== "" || "Required"
-    }
+      validate: (v) => v.trim() !== "" || "Required",
+    },
   ]);
 
   let selected = "";
@@ -30,9 +31,7 @@ export async function showMemberMenu(): Promise<void> {
   if (!isNaN(num) && num >= 1 && num <= choices.length) {
     selected = choices[num - 1];
   } else {
-    selected = choices.find(
-      c => c.toLowerCase() === menuChoice.toLowerCase()
-    ) || "";
+    selected = choices.find((c) => c.toLowerCase() === menuChoice.toLowerCase()) || "";
   }
 
   switch (selected) {
@@ -42,6 +41,10 @@ export async function showMemberMenu(): Promise<void> {
 
     case "View Members":
       await MemberService.viewMembers();
+      break;
+
+    case "Search Members":
+      await MemberService.searchMembers();  
       break;
 
     case "Update Member":

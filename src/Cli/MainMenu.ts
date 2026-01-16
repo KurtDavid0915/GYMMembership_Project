@@ -2,29 +2,32 @@ import inquirer from "inquirer";
 import { showMemberMenu } from "./memberMenu";
 import { showMembershipPlans } from "./membershipplansMenu";
 import { showSubscriptionMenu } from "./subscriptionMenu";
+import { ExportService } from "../Services/export_Service";
+import { waitForEnter } from "../Services/Helper";
 
-export async function showMainMenu(): Promise<void> {
-  console.clear();
+export async function showMainMenu(firstLoad = true): Promise<void> {
+  if (firstLoad) console.clear();
+
   console.log("\n=== Main Menu ===");
   console.log("Please choose an option:\n");
 
   const choices = [
     "Member Transactions",
-    "Membership Transactions",
     "Membership Plans",
-    "Subscriptions",
-    "Exit"
+    "Member Subscriptions",
+    "Export Data",
+    "Exit",
   ];
 
-  choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));
+    choices.forEach((c, i) => console.log(`${i + 1}. ${c}`));
 
   const { choice } = await inquirer.prompt([
     {
       type: "input",
       name: "choice",
       message: "Enter number or option name:",
-      validate: (v) => v.trim() !== "" || "Required"
-    }
+      validate: (v) => v.trim() !== "" || "Required",
+    },
   ]);
 
   let selected = "";
@@ -33,9 +36,8 @@ export async function showMainMenu(): Promise<void> {
   if (!isNaN(num) && num >= 1 && num <= choices.length) {
     selected = choices[num - 1];
   } else {
-    selected = choices.find(
-      c => c.toLowerCase() === choice.toLowerCase()
-    ) || "";
+    selected =
+      choices.find((c) => c.toLowerCase() === choice.toLowerCase()) || "";
   }
 
   switch (selected) {
@@ -43,16 +45,18 @@ export async function showMainMenu(): Promise<void> {
       await showMemberMenu();
       break;
 
-    case "Membership Transactions":
-      console.log("🚧 Not implemented yet.");
-      break;
-
     case "Membership Plans":
       await showMembershipPlans();
       break;
-    
-    case "Subscriptions":
+
+    case "Member Subscriptions":
       await showSubscriptionMenu();
+      break;
+
+    case "Export Data":
+      await ExportService.exportAllToJson("Exports/data_export.json");
+      console.log("\n✅ Export completed successfully!");
+      await waitForEnter(); // pause so user can see log
       break;
 
     case "Exit":
@@ -63,5 +67,6 @@ export async function showMainMenu(): Promise<void> {
       console.log("❌ Invalid option.");
   }
 
-  await showMainMenu(); // 🔁 loop main menu
+  // Recursive call, don’t clear
+  await showMainMenu(false);
 }
